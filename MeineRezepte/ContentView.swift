@@ -12,38 +12,38 @@ struct ContentView: View {
     // State objects for managing application data.
     @StateObject private var recipeStore = RecipeStore()
     @StateObject private var mealPlannerStore = MealPlannerStore()
-    // State for controlling the currently selected tab in the sidebar.
-    @State private var selectedTab: Tab = .recipes
+    
+    // FIX: The selected tab is now optional, which is required for the List selection binding.
+    @State private var selectedTab: Tab? = .recipes
 
     // AppStorage for custom accent color.
     @AppStorage("appAccentColorData") private var appAccentColorData: Data = Data()
 
-    // Computed property to get/set the Color from Data.
-    var customAccentColor: Color {
-        get {
-            // Use UIColor for iOS compatibility
-            if let uiColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: appAccentColorData) {
-                return Color(uiColor)
-            }
-            return .blue // Default color
-        }
-        set {
-            // Use UIColor for iOS compatibility
-            if let encodedColor = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(newValue), requiringSecureCoding: false) {
-                appAccentColorData = encodedColor
-            }
-        }
-    }
-    
+    // FIX: This binding now correctly handles the conversion between Color and Data,
+    // resolving the "self is immutable" error.
     private var customAccentColorBinding: Binding<Color> {
         Binding<Color>(
-            get: { self.customAccentColor },
-            set: { self.customAccentColor = $0 }
+            get: {
+                if let uiColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: appAccentColorData) {
+                    return Color(uiColor)
+                }
+                return .blue // Default color
+            },
+            set: { newColor in
+                if let encodedColor = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(newColor), requiringSecureCoding: false) {
+                    appAccentColorData = encodedColor
+                }
+            }
         )
     }
+    
+    // A simple computed property to easily get the current accent color.
+    private var customAccentColor: Color {
+        customAccentColorBinding.wrappedValue
+    }
 
-    // Enum to define the available tabs/sections of the app.
-    enum Tab {
+    // FIX: The Tab enum now conforms to Hashable, allowing it to be used with List's selection feature.
+    enum Tab: Hashable {
         case recipes
         case mealPlanner
         case shoppingList
@@ -53,65 +53,57 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            // Sidebar for navigation, listing the main sections of the app.
+            // The List's selection binding now works correctly with the Hashable and optional Tab state.
+            // This resolves the "'init(selection:content:)' is unavailable in iOS" error.
             List(selection: $selectedTab) {
-                // NavigationLink for the Recipes section.
                 NavigationLink(value: Tab.recipes) {
                     Label("Rezepte", systemImage: "fork.knife.circle.fill")
                 }
-                .tag(Tab.recipes)
 
-                // NavigationLink for the Meal Planner section.
                 NavigationLink(value: Tab.mealPlanner) {
                     Label("Mahlzeitenplaner", systemImage: "calendar")
                 }
-                .tag(Tab.mealPlanner)
 
-                // New: NavigationLink for the Shopping List section.
                 NavigationLink(value: Tab.shoppingList) {
                     Label("Einkaufsliste", systemImage: "cart.fill")
                 }
-                .tag(Tab.shoppingList)
 
-                // NavigationLink for the Measurement Converter section.
                 NavigationLink(value: Tab.converter) {
                     Label("Umrechner", systemImage: "arrow.left.arrow.right")
                 }
-                .tag(Tab.converter)
 
-                // New: NavigationLink for Settings.
                 NavigationLink(value: Tab.settings) {
                     Label("Einstellungen", systemImage: "gearshape.fill")
                 }
-                .tag(Tab.settings)
             }
-            .listStyle(.sidebar) // Apply sidebar style for a native macOS look.
-            .navigationTitle("Crouton") // Title for the sidebar.
+            .listStyle(.sidebar)
+            .navigationTitle("Crouton")
         } detail: {
-            // Detail view that changes based on the selected tab.
-            switch selectedTab {
-            case .recipes:
-                // Display RecipeListView and inject the recipeStore as an environment object.
-                RecipeListView()
-                    .environmentObject(recipeStore)
-            case .mealPlanner:
-                // Display MealPlannerView and inject both recipeStore and mealPlannerStore.
-                MealPlannerView()
-                    .environmentObject(recipeStore)
-                    .environmentObject(mealPlannerStore)
-            case .shoppingList:
-                // Display ShoppingListView and inject both stores.
-                ShoppingListView()
-                    .environmentObject(recipeStore)
-                    .environmentObject(mealPlannerStore)
-            case .converter:
-                // Display MeasurementConverterView.
-                MeasurementConverterView()
-            case .settings:
-                SettingsView(customAccentColor: customAccentColorBinding)
+            // The detail view now safely unwraps the optional selected tab.
+            if let selectedTab = selectedTab {
+                switch selectedTab {
+                case .recipes:
+                    RecipeListView()
+                        .environmentObject(recipeStore)
+                case .mealPlanner:
+                    MealPlannerView()
+                        .environmentObject(recipeStore)
+                        .environmentObject(mealPlannerStore)
+                case .shoppingList:
+                    ShoppingListView()
+                        .environmentObject(recipeStore)
+                        .environmentObject(mealPlannerStore)
+                case .converter:
+                    MeasurementConverterView()
+                case .settings:
+                    SettingsView(customAccentColor: customAccentColorBinding)
+                }
+            } else {
+                // A default view shown when nothing is selected.
+                Text("Bitte eine Kategorie auswählen.")
             }
         }
-        .accentColor(customAccentColor) // Apply the custom accent color to the entire app.
+        .accentColor(customAccentColor)
     }
 }
 
