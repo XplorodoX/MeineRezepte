@@ -9,54 +9,101 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    // State objects for managing application data.
+    @StateObject private var recipeStore = RecipeStore()
+    @StateObject private var mealPlannerStore = MealPlannerStore()
+    // State for controlling the currently selected tab in the sidebar.
+    @State private var selectedTab: Tab = .recipes
+
+    // AppStorage for custom accent color.
+    @AppStorage("appAccentColor") private var appAccentColorData: Data = Data()
+
+    // Computed property to get/set the Color from Data.
+    var customAccentColor: Color {
+        get {
+            guard let decodedColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: appAccentColorData) else {
+                return .blue // Default color if decoding fails
+            }
+            return Color(decodedColor)
+        }
+        set {
+            if let encodedColor = try? NSKeyedArchiver.archivedData(withRootObject: NSColor(newValue), requiringSecureCoding: false) {
+                appAccentColorData = encodedColor
+            }
+        }
+    }
+
+    // Enum to define the available tabs/sections of the app.
+    enum Tab {
+        case recipes
+        case mealPlanner
+        case shoppingList
+        case converter
+        case settings
+    }
 
     var body: some View {
         NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+            // Sidebar for navigation, listing the main sections of the app.
+            List(selection: $selectedTab) {
+                // NavigationLink for the Recipes section.
+                NavigationLink(value: Tab.recipes) {
+                    Label("Rezepte", systemImage: "fork.knife.circle.fill")
                 }
-                .onDelete(perform: deleteItems)
+                .tag(Tab.recipes) // Tag to link with selectedTab state.
+
+                // NavigationLink for the Meal Planner section.
+                NavigationLink(value: Tab.mealPlanner) {
+                    Label("Mahlzeitenplaner", systemImage: "calendar")
+                }
+                .tag(Tab.mealPlanner)
+
+                // New: NavigationLink for the Shopping List section.
+                NavigationLink(value: Tab.shoppingList) {
+                    Label("Einkaufsliste", systemImage: "cart.fill")
+                }
+                .tag(Tab.shoppingList)
+
+                // NavigationLink for the Measurement Converter section.
+                NavigationLink(value: Tab.converter) {
+                    Label("Umrechner", systemImage: "arrow.left.arrow.right")
+                }
+                .tag(Tab.converter)
+
+                // New: NavigationLink for Settings.
+                NavigationLink(value: Tab.settings) {
+                    Label("Einstellungen", systemImage: "gearshape.fill")
+                }
+                .tag(Tab.settings)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
+            .listStyle(.sidebar) // Apply sidebar style for a native macOS look.
+            .navigationTitle("Crouton") // Title for the sidebar.
         } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            // Detail view that changes based on the selected tab.
+            switch selectedTab {
+            case .recipes:
+                // Display RecipeListView and inject the recipeStore as an environment object.
+                RecipeListView()
+                    .environmentObject(recipeStore)
+            case .mealPlanner:
+                // Display MealPlannerView and inject both recipeStore and mealPlannerStore.
+                MealPlannerView()
+                    .environmentObject(recipeStore)
+                    .environmentObject(mealPlannerStore)
+            case .shoppingList:
+                // Display ShoppingListView and inject both stores.
+                ShoppingListView()
+                    .environmentObject(recipeStore)
+                    .environmentObject(mealPlannerStore)
+            case .converter:
+                // Display MeasurementConverterView.
+                MeasurementConverterView()
+            case .settings:
+                // Display SettingsView.
+                SettingsView(customAccentColor: $customAccentColor)
             }
         }
+        .accentColor(customAccentColor) // Apply the custom accent color to the entire app.
     }
 }
 
