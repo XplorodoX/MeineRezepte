@@ -75,7 +75,7 @@ struct ShoppingListView: View {
         var formattedList: [String] = []
         for (ingredient, quantity) in collectedIngredients.sorted(by: { $0.key < $1.key }) {
             if let unit = collectedUnits[ingredient], !unit.isEmpty {
-                formattedList.append(String(format: "%.1f %@ %@", quantity, unit, ingredient.replacingOccoccurences(of: " (\(unit))", with: "")))
+                formattedList.append(String(format: "%.1f %@ %@", quantity, unit, ingredient.replacingOccurrences(of: " (\(unit))", with: "")))
             } else {
                 formattedList.append(ingredient) // For items without a clear quantity/unit
             }

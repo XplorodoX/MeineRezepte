@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit // Import UIKit
 
 struct SettingsView: View {
     // Binden Sie die Akzentfarbe aus der ContentView
@@ -8,16 +9,16 @@ struct SettingsView: View {
         Form {
             Section(header: Text("Darstellung")) {
                 ColorPicker("Akzentfarbe", selection: $customAccentColor)
-                
+
                 // NEU: App-Icon ändern
                 Button("App-Icon zu Rot ändern") {
                     changeAppIcon(to: "redIcon")
                 }
-                
+
                 Button("App-Icon zu Grün ändern") {
                     changeAppIcon(to: "greenIcon")
                 }
-                
+
                 Button("Standard-App-Icon wiederherstellen") {
                     changeAppIcon(to: nil)
                 }
@@ -26,7 +27,7 @@ struct SettingsView: View {
         .padding()
         .navigationTitle("Einstellungen")
     }
-    
+
     // NEU: Funktion zum Ändern des App-Icons
     func changeAppIcon(to iconName: String?) {
         guard UIApplication.shared.supportsAlternateIcons else {

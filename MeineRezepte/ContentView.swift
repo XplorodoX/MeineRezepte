@@ -16,21 +16,30 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .recipes
 
     // AppStorage for custom accent color.
-    @AppStorage("appAccentColor") private var appAccentColorData: Data = Data()
+    @AppStorage("appAccentColorData") private var appAccentColorData: Data = Data()
 
     // Computed property to get/set the Color from Data.
     var customAccentColor: Color {
         get {
-            guard let decodedColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: appAccentColorData) else {
-                return .blue // Default color if decoding fails
+            // Use UIColor for iOS compatibility
+            if let uiColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: appAccentColorData) {
+                return Color(uiColor)
             }
-            return Color(decodedColor)
+            return .blue // Default color
         }
         set {
-            if let encodedColor = try? NSKeyedArchiver.archivedData(withRootObject: NSColor(newValue), requiringSecureCoding: false) {
+            // Use UIColor for iOS compatibility
+            if let encodedColor = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(newValue), requiringSecureCoding: false) {
                 appAccentColorData = encodedColor
             }
         }
+    }
+    
+    private var customAccentColorBinding: Binding<Color> {
+        Binding<Color>(
+            get: { self.customAccentColor },
+            set: { self.customAccentColor = $0 }
+        )
     }
 
     // Enum to define the available tabs/sections of the app.
@@ -50,7 +59,7 @@ struct ContentView: View {
                 NavigationLink(value: Tab.recipes) {
                     Label("Rezepte", systemImage: "fork.knife.circle.fill")
                 }
-                .tag(Tab.recipes) // Tag to link with selectedTab state.
+                .tag(Tab.recipes)
 
                 // NavigationLink for the Meal Planner section.
                 NavigationLink(value: Tab.mealPlanner) {
@@ -99,8 +108,7 @@ struct ContentView: View {
                 // Display MeasurementConverterView.
                 MeasurementConverterView()
             case .settings:
-                // Display SettingsView.
-                SettingsView(customAccentColor: $customAccentColor)
+                SettingsView(customAccentColor: customAccentColorBinding)
             }
         }
         .accentColor(customAccentColor) // Apply the custom accent color to the entire app.
