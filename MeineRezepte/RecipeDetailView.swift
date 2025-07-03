@@ -1,4 +1,3 @@
-//
 //  RecipeDetailView.swift
 //  MeineRezepte
 //
@@ -17,6 +16,15 @@ struct RecipeDetailView: View {
     var body: some View {
         ScrollView { // Allows content to scroll if it exceeds view bounds.
             VStack(alignment: .leading, spacing: 15) {
+                // NEU: Bild anzeigen, wenn vorhanden
+                if let imageName = recipe.imageName, let uiImage = UIImage(named: imageName) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .cornerRadius(10)
+                        .padding(.bottom, 5)
+                }
+                
                 Text(recipe.title)
                     .font(.largeTitle)
                     .fontWeight(.bold)
@@ -131,7 +139,7 @@ struct RecipeDetailView: View {
             if components.count == 2, let value = Double(components[0]) {
                 let scaledValue = value * scaleFactor // Apply the scale factor.
                 // Format the scaled value to one decimal place and append the rest of the line.
-                scaledLines.append(String(format: "%.1f %@", scaledValue, components[1] as CVarArg))
+                scaledLines.append(String(format: "%.1f %@", scaledValue, String(components[1])))
             } else {
                 // If not a parsable numerical ingredient, keep the line as is.
                 scaledLines.append(String(line))

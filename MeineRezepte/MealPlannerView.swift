@@ -1,4 +1,3 @@
-//
 //  MealPlannerView.swift
 //  MeineRezepte
 //
@@ -13,14 +12,55 @@ struct MealPlannerView: View {
     @EnvironmentObject var mealPlannerStore: MealPlannerStore // Access meal plan data.
     @State private var selectedDate: Date = Date() // The date currently in focus for the week display.
     @State private var showingRecipePicker = false // Controls presentation of the recipe picker sheet.
+    
+    // NEU: Zustand für die Ansichtsauswahl
+    @State private var plannerView: PlannerView = .week
+
+    enum PlannerView: String, CaseIterable, Identifiable {
+        case week = "Woche"
+        case month = "Monat"
+        var id: Self { self }
+    }
 
     var body: some View {
         VStack {
-            Text("Wochenplan")
+            // NEU: Picker zur Auswahl der Ansicht
+            Picker("Ansicht", selection: $plannerView) {
+                ForEach(PlannerView.allCases) { view in
+                    Text(view.rawValue).tag(view)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+
+            Text(plannerView == .week ? "Wochenplan" : "Monatsplan")
                 .font(.largeTitle)
                 .padding(.bottom)
+            
+            // Logik zur Anzeige der entsprechenden Ansicht
+            if plannerView == .week {
+                WeekView(selectedDate: $selectedDate)
+            } else {
+                MonthView(selectedDate: $selectedDate)
+            }
+            
+            // New: Auto-generate meal plan button.
+            Button("Mahlzeitenplan automatisch generieren") {
+                mealPlannerStore.autoGenerateMealPlan(from: recipeStore.recipes)
+            }
+            .padding(.top)
+        }
+    }
+}
 
-            HStack {
+// NEU: Eigene Ansichten für Woche und Monat für bessere Lesbarkeit
+
+struct WeekView: View {
+    @Binding var selectedDate: Date
+    
+    var body: some View {
+        VStack {
+             HStack {
                 // Button to navigate to the previous week.
                 Button(action: {
                     selectedDate = Calendar.current.date(byAdding: .day, value: -7, to: selectedDate) ?? selectedDate
@@ -54,20 +94,12 @@ struct MealPlannerView: View {
                     let date = Calendar.current.date(byAdding: .day, value: dayOffset, to: startOfWeek(for: selectedDate))!
                     // Display a MealDayView for each day.
                     MealDayView(date: date)
-                        .environmentObject(recipeStore)
-                        .environmentObject(mealPlannerStore)
                 }
             }
             .padding()
-
-            // New: Auto-generate meal plan button.
-            Button("Mahlzeitenplan automatisch generieren") {
-                mealPlannerStore.autoGenerateMealPlan(from: recipeStore.recipes)
-            }
-            .padding(.top)
         }
     }
-
+    
     // Helper function to get the start of the week (Monday).
     func startOfWeek(for date: Date) -> Date {
         var calendar = Calendar.current
@@ -83,5 +115,15 @@ struct MealPlannerView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium // Use medium style for date formatting.
         return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+    }
+}
+
+struct MonthView: View {
+    @Binding var selectedDate: Date
+    // Implementieren Sie hier die Monatsansicht, ähnlich der Wochenansicht
+    var body: some View {
+        Text("Monatsansicht (Implementierung erforderlich)")
+            .font(.title)
+            .foregroundColor(.gray)
     }
 }

@@ -14,9 +14,9 @@ struct Recipe: Identifiable, Codable, Hashable {
     var title: String
     var ingredients: String
     var instructions: String
-    var servings: Double = 1.0 // Default servings, used for scaling
-    var url: String? // New: Optional URL for the recipe source
-    // var imageUrl: String? // Future: For storing image URLs (requires more robust storage than UserDefaults)
+    var servings: Double = 1.0
+    var url: String?
+    var imageName: String? // Vorschlag: Name für ein Bild im Asset-Katalog
 }
 
 // Represents a meal plan entry for a specific date and recipe

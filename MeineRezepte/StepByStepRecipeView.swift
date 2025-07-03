@@ -1,11 +1,10 @@
-//
 //  StepByStepRecipeView.swift
 //  MeineRezepte
 //
 //  Created by Florian Merlau on 03.07.25.
 //
 import SwiftUI
-import SwiftData
+import Vision // NEU
 
 struct StepByStepRecipeView: View {
     @Environment(\.dismiss) var dismiss
@@ -16,6 +15,9 @@ struct StepByStepRecipeView: View {
     var steps: [String] {
         instructions.split(separator: "\n").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
+    
+    // NEU: Zustand für die Gesichtserkennung
+    @State private var winkDetected = false
 
     var body: some View {
         VStack {
@@ -51,11 +53,7 @@ struct StepByStepRecipeView: View {
                 Spacer()
 
                 Button(action: {
-                    if currentStepIndex < steps.count - 1 {
-                        currentStepIndex += 1
-                    } else {
-                        dismiss() // Dismiss if it's the last step
-                    }
+                    goToNextStep()
                 }) {
                     Label(currentStepIndex == steps.count - 1 ? "Fertig" : "Weiter", systemImage: currentStepIndex == steps.count - 1 ? "checkmark.circle.fill" : "arrow.forward.circle.fill")
                         .font(.title)
@@ -69,5 +67,29 @@ struct StepByStepRecipeView: View {
             .padding(.bottom)
         }
         .frame(minWidth: 500, minHeight: 400)
+        .onAppear(perform: setupWinkDetection) // NEU
+        .onChange(of: winkDetected) { wink in // NEU
+            if wink {
+                goToNextStep()
+                winkDetected = false // Zurücksetzen
+            }
+        }
+    }
+    
+    // NEU: Funktion zum Einrichten der Augenzwinkern-Erkennung
+    private func setupWinkDetection() {
+        // Hier würden Sie den Code für AVFoundation und Vision einfügen,
+        // um die Kamera zu starten und die Gesichtserkennung zu beginnen.
+        // Bei erkanntem Augenzwinkern setzen Sie `winkDetected = true`.
+        print("Wink Detection Setup (Platzhalter)")
+    }
+    
+    // NEU: Hilfsfunktion für den nächsten Schritt
+    private func goToNextStep() {
+        if currentStepIndex < steps.count - 1 {
+            currentStepIndex += 1
+        } else {
+            dismiss() // Dismiss if it's the last step
+        }
     }
 }

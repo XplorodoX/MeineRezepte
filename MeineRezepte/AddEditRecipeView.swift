@@ -1,4 +1,3 @@
-//
 //  AddEditRecipeView.swift
 //  MeineRezepte
 //
@@ -18,6 +17,7 @@ struct AddEditRecipeView: View {
     @State private var instructions: String
     @State private var servings: Double
     @State private var url: String
+    @State private var imageName: String // NEU
 
     // Custom initializer to set initial state based on whether a recipe is provided.
     init(recipe: Recipe?, onSave: @escaping (Recipe) -> Void) {
@@ -29,6 +29,7 @@ struct AddEditRecipeView: View {
         _instructions = State(initialValue: recipe?.instructions ?? "")
         _servings = State(initialValue: recipe?.servings ?? 1.0)
         _url = State(initialValue: recipe?.url ?? "") // Initialize URL field
+        _imageName = State(initialValue: recipe?.imageName ?? "") // NEU
     }
 
     var body: some View {
@@ -37,6 +38,8 @@ struct AddEditRecipeView: View {
                 TextField("Rezepttitel", text: $title) // Input for recipe title.
                 TextField("Quell-URL (optional)", text: $url) // New: Input for recipe URL.
                     .keyboardType(.URL)
+                TextField("Bildname (aus Assets)", text: $imageName) // NEU
+                
                 Section("Zutaten") {
                     TextEditor(text: $ingredients) // Multi-line input for ingredients.
                         .frame(minHeight: 100)
@@ -68,7 +71,8 @@ struct AddEditRecipeView: View {
                             ingredients: ingredients,
                             instructions: instructions,
                             servings: servings,
-                            url: url.isEmpty ? nil : url // Save URL only if not empty
+                            url: url.isEmpty ? nil : url, // Save URL only if not empty
+                            imageName: imageName.isEmpty ? nil : imageName // NEU
                         )
                         onSave(newRecipe) // Call the onSave closure.
                         dismiss() // Dismiss the sheet.
